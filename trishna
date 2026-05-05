@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Powered Text & Emoji Art</title>
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --glass-bg: rgba(17, 24, 39, 0.6);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --neon-accent: #8b5cf6; /* Purple/Violet theme for AI */
+            --neon-accent-glow: rgba(139, 92, 246, 0.4);
+            --text-main: #e2e8f0;
+            --text-muted: #94a3b8;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(139, 92, 246, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(0, 240, 255, 0.1) 0px, transparent 50%);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+        }
+
+        .container {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 2.5rem;
+            width: 100%;
+            max-width: 800px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+
+        @media (max-width: 768px) {
+            .container { grid-template-columns: 1fr; }
+        }
+
+        h1 {
+            grid-column: 1 / -1;
+            font-size: 2.2rem;
+            font-weight: 700;
+            text-align: center;
+            color: #fff;
+            text-shadow: 0 0 10px var(--neon-accent-glow);
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .left-panel, .right-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .input-group label {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .input-group input[type="text"] {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            padding: 1rem;
+            color: var(--text-main);
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .input-group input[type="text"]:focus {
+            border-color: var(--neon-accent);
+            box-shadow: 0 0 10px var(--neon-accent-glow);
+        }
+
+        .upload-box {
+            border: 2px dashed var(--glass-border);
+            border-radius: 12px;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            background: rgba(0, 0, 0, 0.2);
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .upload-box:hover {
+            border-color: var(--neon-accent);
+            background: rgba(139, 92, 246, 0.05);
+        }
+
+        .upload-box input[type="file"] {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        textarea {
+            width: 100%;
+            height: 300px;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 1rem;
+            color: var(--neon-accent);
+            font-family: monospace;
+            font-size: 8px;
+            line-height: 8px;
+            resize: none;
+            outline: none;
+            white-space: pre;
+            overflow: auto;
+        }
+
+        textarea:focus {
+            border-color: var(--neon-accent);
+            box-shadow: 0 0 10px var(--neon-accent-glow);
+        }
+
+        .btn {
+            background: transparent;
+            border: 1px solid var(--neon-accent);
+            color: var(--neon-accent);
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 0.9rem;
+            width: 100%;
+        }
+
+        .btn:hover:not(:disabled) {
+            background: var(--neon-accent);
+            color: #000;
+            box-shadow: 0 0 15px var(--neon-accent-glow);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* AI Suggestions Panel */
+        .ai-panel {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--neon-accent);
+            border-radius: 12px;
+            padding: 1.5rem;
+            display: none;
+            flex-direction: column;
+            gap: 1rem;
+            position: relative;
+        }
+
+        .ai-panel.active {
+            display: flex;
+            animation: fadeIn 0.5s ease forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .ai-chip-container {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .ai-chip {
+            background: rgba(139, 92, 246, 0.2);
+            border: 1px solid var(--neon-accent);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        .ai-chip:hover {
+            background: var(--neon-accent);
+            color: #000;
+        }
+
+        .ai-caption {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-style: italic;
+            padding: 0.5rem;
+            border-left: 3px solid var(--neon-accent);
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .loader {
+            display: none;
+            border: 3px solid rgba(255,255,255,0.1);
+            border-top: 3px solid var(--neon-accent);
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        canvas { display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>✨ AI Art Studio</h1>
+        
+        <div class="left-panel">
+            <div class="upload-box" id="uploadBox">
+                <span style="font-size: 2.5rem; display: block; margin-bottom: 0.5rem;">📸</span>
+                <p>Upload Image</p>
+                <span style="font-size: 0.8rem; color: var(--text-muted); margin-top: 5px; text-align: center;">Gemini AI will analyze it automatically</span>
+                <input type="file" id="imageInput" accept="image/*">
+            </div>
+
+            <div class="input-group">
+                <label for="customInput">Custom Text / Emoji</label>
+                <input type="text" id="customInput" value="AI" placeholder="Type anything...">
+            </div>
+
+            <!-- AI Magic Panel -->
+            <div class="ai-panel" id="aiPanel">
+                <h3 style="font-size: 1rem; color: var(--neon-accent);">🤖 AI Suggestions</h3>
+                <p style="font-size: 0.8rem; color: var(--text-muted);">Click a chip to apply it to your art:</p>
+                <div class="ai-chip-container">
+                    <div class="ai-chip" id="chipEmoji">🔥</div>
+                    <div class="ai-chip" id="chipWord">FIRE</div>
+                </div>
+                <div class="ai-caption" id="aiCaption">Loading caption...</div>
+            </div>
+            <div class="loader" id="loader"></div>
+        </div>
+
+        <div class="right-panel">
+            <textarea id="outputArea" readonly placeholder="Your custom AI art will appear here..."></textarea>
+            <button class="btn" id="copyBtn">Copy Art & Caption</button>
+        </div>
+    </div>
+
+    <canvas id="hiddenCanvas"></canvas>
+
+    <script>
+        const API_KEY = "AIzaSyAIhEggR6HcEnF_RPXmR6JARXl-0t9bm30";
+        
+        const imageInput = document.getElementById('imageInput');
+        const customInput = document.getElementById('customInput');
+        const outputArea = document.getElementById('outputArea');
+        const copyBtn = document.getElementById('copyBtn');
+        const hiddenCanvas = document.getElementById('hiddenCanvas');
+        const ctx = hiddenCanvas.getContext('2d', { willReadFrequently: true });
+        
+        const aiPanel = document.getElementById('aiPanel');
+        const loader = document.getElementById('loader');
+        const chipEmoji = document.getElementById('chipEmoji');
+        const chipWord = document.getElementById('chipWord');
+        const aiCaption = document.getElementById('aiCaption');
+
+        const FONT_ASPECT_RATIO = 0.45; 
+        const FIXED_WIDTH = 75; // Optimal columns for rendering detail
+
+        let currentImg = null;
+        let base64ImageString = "";
+        let currentGeneratedCaption = "";
+
+        imageInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const img = new Image();
+                img.onload = () => {
+                    currentImg = img;
+                    generateTextArt();
+                    
+                    // Compress image slightly for faster API response
+                    const compressCanvas = document.createElement('canvas');
+                    const compCtx = compressCanvas.getContext('2d');
+                    const scale = Math.min(1, 512 / Math.max(img.width, img.height));
+                    compressCanvas.width = img.width * scale;
+                    compressCanvas.height = img.height * scale;
+                    compCtx.drawImage(img, 0, 0, compressCanvas.width, compressCanvas.height);
+                    
+                    base64ImageString = compressCanvas.toDataURL('image/jpeg', 0.8).split(',')[1];
+                    analyzeImageWithAI();
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+
+        customInput.addEventListener('input', () => {
+            if(currentImg) generateTextArt();
+        });
+
+        function generateTextArt() {
+            if (!currentImg) return;
+
+            const rawText = customInput.value || "#";
+            const charsArray = Array.from(rawText);
+            let charIndex = 0;
+
+            const aspectRatio = currentImg.height / currentImg.width;
+            const pxHeight = Math.round(FIXED_WIDTH * aspectRatio * FONT_ASPECT_RATIO); 
+
+            hiddenCanvas.width = FIXED_WIDTH;
+            hiddenCanvas.height = pxHeight;
+
+            ctx.drawImage(currentImg, 0, 0, FIXED_WIDTH, pxHeight);
+            const imgData = ctx.getImageData(0, 0, FIXED_WIDTH, pxHeight).data;
+
+            let totalBrightness = 0;
+            let validPixels = 0;
+
+            for (let i = 0; i < imgData.length; i += 4) {
+                const a = imgData[i + 3];
+                if (a > 128) { 
+                    const r = imgData[i];
+                    const g = imgData[i + 1];
+                    const b = imgData[i + 2];
+                    totalBrightness += (r * 0.299 + g * 0.587 + b * 0.114);
+                    validPixels++;
+                }
+            }
+            
+            const smartThreshold = validPixels > 0 ? (totalBrightness / validPixels) : 128;
+            let result = '';
+
+            for (let y = 0; y < pxHeight; y++) {
+                for (let x = 0; x < FIXED_WIDTH; x++) {
+                    const index = (y * FIXED_WIDTH + x) * 4;
+                    const r = imgData[index];
+                    const g = imgData[index + 1];
+                    const b = imgData[index + 2];
+                    const a = imgData[index + 3];
+
+                    let brightness = (r * 0.299 + g * 0.587 + b * 0.114);
+                    if (a < 128) brightness = 255; 
+
+                    if (brightness < smartThreshold) {
+                        result += charsArray[charIndex % charsArray.length];
+                        charIndex++;
+                    } else {
+                        result += " "; 
+                    }
+                }
+                result += '\n';
+            }
+
+            outputArea.value = result;
+        }
+
+        // --- GEMINI API INTEGRATION ---
+        async function analyzeImageWithAI() {
+            if (!base64ImageString) return;
+
+            aiPanel.classList.remove('active');
+            loader.style.display = 'block';
+
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
+            
+            const payload = {
+                contents: [{
+                    parts: [
+                        { text: `Analyze this image and return a JSON object with exactly 3 keys: 
+                        1. 'best_emoji': A single emoji that best represents the main subject.
+                        2. 'best_word': A single uppercase word (max 6 letters) describing the vibe/subject.
+                        3. 'caption': A short, engaging social media caption (1-2 sentences max) to post along with an ASCII art version of this image.` },
+                        { inline_data: { mime_type: "image/jpeg", data: base64ImageString } }
+                    ]
+                }],
+                generationConfig: {
+                    response_mime_type: "application/json"
+                }
+            };
+
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+                
+                if (data.candidates && data.candidates[0].content.parts[0].text) {
+                    const aiResult = JSON.parse(data.candidates[0].content.parts[0].text);
+                    
+                    // Update UI with AI results
+                    chipEmoji.innerText = aiResult.best_emoji || "✨";
+                    chipWord.innerText = aiResult.best_word || "ART";
+                    currentGeneratedCaption = aiResult.caption || "Check out this cool art!";
+                    aiCaption.innerText = `"${currentGeneratedCaption}"`;
+                    
+                    loader.style.display = 'none';
+                    aiPanel.classList.add('active');
+                }
+            } catch (error) {
+                console.error("AI Analysis failed:", error);
+                loader.style.display = 'none';
+            }
+        }
+
+        // Click chips to auto-fill input and regenerate art
+        chipEmoji.addEventListener('click', () => {
+            customInput.value = chipEmoji.innerText;
+            generateTextArt();
+        });
+
+        chipWord.addEventListener('click', () => {
+            customInput.value = chipWord.innerText;
+            generateTextArt();
+        });
+
+        // Copy button now copies the art PLUS the AI generated caption
+        copyBtn.addEventListener('click', () => {
+            if (!outputArea.value) return;
+            
+            const finalCopyText = outputArea.value + "\n\n" + currentGeneratedCaption;
+            navigator.clipboard.writeText(finalCopyText);
+            
+            const originalText = copyBtn.innerText;
+            copyBtn.innerText = 'Copied Successfully!';
+            copyBtn.style.background = 'var(--neon-accent)';
+            copyBtn.style.color = '#000';
+            
+            setTimeout(() => {
+                copyBtn.innerText = originalText;
+                copyBtn.style.background = 'transparent';
+                copyBtn.style.color = 'var(--neon-accent)';
+            }, 2000);
+        });
+    </script>
+</body>
+</html>
